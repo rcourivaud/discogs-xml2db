@@ -89,8 +89,8 @@ class TextExporter(object):
 			if hasattr(artist, c):
 				val = getattr(artist, c)
 				row.append(prepare_value(val))
-			#else:
-			#	print "Artist doesn't have %s" % c
+			else:
+				row.append(prepare_value(None))
 
 		# if row:
 		#	self._writer('artist').writerow(row)
