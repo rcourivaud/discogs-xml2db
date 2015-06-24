@@ -40,7 +40,7 @@ def prepare_value(value):
 			return str(value)
 
 
-class TextExporter(object):
+class PgTextExporter(object):
 	def __init__(self, options, data_quality):
 		self.min_data_quality = data_quality
 		now = datetime.now()

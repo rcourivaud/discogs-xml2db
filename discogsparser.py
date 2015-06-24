@@ -33,8 +33,8 @@ exporters = { 'json': 'jsonexporter.JsonConsoleExporter',
 	'pgdump': 'postgresexporter.PostgresConsoleDumper',
 	'couch' : 'couchdbexporter.CouchDbExporter',
 	'mongo' : 'mongodbexporter.MongoDbExporter',
-	'text'  : 'textexporter.TextExporter'
-	}
+	'pgcopy': 'textexporter.PgTextExporter'
+}
 
 # http://www.discogs.com/help/voting-guidelines.html
 data_quality_values = ( 'Needs Vote',
