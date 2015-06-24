@@ -8,6 +8,7 @@ from cStringIO import StringIO
 # - options for separator
 
 csv.register_dialect('pgcopy', delimiter='\t')
+csv.register_dialect('pgarray', delimiter=',', doublequote=False, escapechar='\\', quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
 
 
 def format_array(arr):
@@ -16,11 +17,12 @@ def format_array(arr):
 	else:
 		actuals = [prepare_value(x) for x in arr]
 		tmp_file = StringIO()
-		tmp_writer = csv.writer(tmp_file, dialect=csv.excel)
+		tmp_writer = csv.writer(tmp_file, dialect='pgarray')
 		tmp_writer.writerow(actuals)
 		tmp = tmp_file.getvalue().rstrip()
 		tmp_file.close()
-		return "{%s}" % tmp
+		return "{%s}" % tmp.replace("\\\"", "\\\\\"")
+
 
 def prepare_value(value):
 	if value is None or (type(value) is str and value == ''):
@@ -29,10 +31,13 @@ def prepare_value(value):
 		return format_array(value)
 	else:
 		if hasattr(value, 'encode'):
-			return value.encode('utf-8')
+			val = value.encode('utf-8')\
+				.replace('\n', '\\n')\
+				.replace('\r', '\\r')\
+				.replace('\t', '\\t')
+			return val
 		else:
 			return str(value)
-
 
 
 class TextExporter(object):
