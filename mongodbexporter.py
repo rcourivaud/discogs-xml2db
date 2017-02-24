@@ -24,7 +24,7 @@ class _MongoImportFile(object):
 		if (len(lines) > 1):
 			line = ' '.join(lines)
 		self._f.writelines((line, '\n'))
-		#print '>%s: %s' % (self._fname, line)
+		# print('>%s: %s' % (self._fname, line))
 
 	def ensure_index(self, name, *args, **kwargs):
 		pass
@@ -134,7 +134,7 @@ class _IdHashPairs(object):
 						for id, hash in self._hashes[name].iteritems():
 							f.writelines(('%s:%s' % (id, hash), '\n'))
 			except IOError as e:
-				print 'IOError writing out %s: %s' % (name, e)
+				print('IOError writing out %s: %s' % (name, e))
 
 
 class MongoDbExporter(object):
@@ -159,15 +159,18 @@ class MongoDbExporter(object):
 				self._quick_uniq = _IdHashPairs(path)
 		elif u.scheme == 'mongodb':
 			if '?' in u.path and u.query == '':
-				#url didn't parse it properly u.path is '/dbname?options
+				# url didn't parse it properly u.path is '/dbname?options
 				db_name, self._options = u.path.split('?', 1)
 				self._options = urlparse.parse_qs(self._options) if self._options else {}
 			else:
 				db_name = u.path
 			if db_name.startswith('/'):
 				db_name = db_name[1:]
-			#print 'Connecting to db %s on %s with options.' % (db_name, mongo_uri, options)
-			mongo = pymongo.Connection(mongo_uri)
+			# print('Connecting to db %s on %s with options.' % (db_name, mongo_uri, options))
+			try:
+				mongo = pymongo.Connection(mongo_uri)
+			except:
+				mongo = pymongo.MongoClient(mongo_uri)
 			self.db = mongo[db_name]
 			if 'uniq' in self._options and 'md5' in self._options['uniq']:
 				self._quick_uniq = False
@@ -190,7 +193,7 @@ class MongoDbExporter(object):
 
 	def execute(self, collection, what):
 		if not self.good_quality(what):
-			# print "Bad quality: %s for %s" % (what.data_quality, what.id)
+			# print("Bad quality: %s for %s" % (what.data_quality, what.id))
 			return
 		# have to convert it to json and back because
 		# on simple objects couchdb-python throws:
@@ -208,7 +211,7 @@ class MongoDbExporter(object):
 	def finish(self, completely_done=False):
 		collections = self.db.collection_names()
 		if 'artists' in collections:
-			#self.db.artists.('id', background=True)
+			# self.db.artists.('id', background=True)
 			self.db.artists.ensure_index('id', background=True, unique=True)
 			# should be unique=True, but can't seem to offer a true guarantee
 			self.db.artists.ensure_index('l_name', background=True)
@@ -217,15 +220,16 @@ class MongoDbExporter(object):
 			self.db.labels.ensure_index('l_name', background=True)
 		if 'releases' in collections:
 			self.db.releases.ensure_index('id', background=True, unique=True)
-			self.db.releases.ensure_index([('l_artist', pymongo.ASCENDING),
-				('l_title', pymongo.ASCENDING)],
-				background=True)
+			self.db.releases.ensure_index([('l_artist', pymongo.ASCENDING), ('l_title', pymongo.ASCENDING)], background=True)
 			self.db.releases.ensure_index('format.name', background=True)
 		if 'masters' in collections:
 			self.db.masters.ensure_index('id', background=True, unique=True)
 			self.db.masters.ensure_index('l_title', background=True)
 			self.db.masters.ensure_index('main_release', background=True, unique=True)
-		self.db.connection.disconnect()
+		try:
+			self.db.connection.disconnect()
+		except:
+			pass
 		if self._quick_uniq is not None:
 			self._quick_uniq.finish()
 

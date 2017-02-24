@@ -50,7 +50,7 @@ class ReleaseHandler(xml.sax.handler.ContentHandler):
 							'formats',
 							'genre',
 							'genres',
-							#'indentifiers', 'identifier',
+							# 'indentifiers', 'identifier',
 							'image',
 							'images',
 							'join',
@@ -73,7 +73,7 @@ class ReleaseHandler(xml.sax.handler.ContentHandler):
 							'tracks',
 							'url',
 							'urls',
-							)
+		)
 		self.release = None
 		self.buffer = ''
 		self.unknown_tags = []
@@ -83,11 +83,11 @@ class ReleaseHandler(xml.sax.handler.ContentHandler):
 		self.stack = []
 
 	def startElement(self, name, attrs):
-		if not name in self.knownTags:
+		if name not in self.knownTags:
 			if not self.ignore_missing_tags:
-				print "Error: Unknown Release element '%s'." % name
+				print("Error: Unknown Release element '%s'." % name)
 				sys.exit()
-			elif not name in self.unknown_tags:
+			elif name not in self.unknown_tags:
 				self.unknown_tags.append(name)
 		self.stack.append(name)
 
@@ -108,14 +108,15 @@ class ReleaseHandler(xml.sax.handler.ContentHandler):
 			img.width = attrs["width"]
 			self.release.images.append(img)
 			if len(attrs) != 5:
-				print "ATTR ERROR"
-				print attrs
+				print("ATTR ERROR")
+				print(attrs)
 				sys.exit()
 
 		elif name == 'format':
 			fmt = model.Format()
 			fmt.name = attrs['name']
 			fmt.qty = attrs['qty']
+			fmt.text = attrs['text']
 			self.release.formats.append(fmt)
 
 		elif name == 'label':
@@ -124,10 +125,12 @@ class ReleaseHandler(xml.sax.handler.ContentHandler):
 			lbl.catno = attrs['catno']
 			self.release.labels.append(lbl)
 
+		elif name == 'company' and 'companies' in self.stack:
+			self.release.companies.append(model.Company())
+
 		# Barcode
 		elif name == 'identifier' and attrs['type'] == 'Barcode':
 			self.release.barcode = attrs['value']
-
 
 	def characters(self, data):
 		self.buffer += data
@@ -160,7 +163,7 @@ class ReleaseHandler(xml.sax.handler.ContentHandler):
 			if len(self.buffer) != 0:
 				self.release.notes = self.buffer
 
-		# Release Genre	
+		# Release Genre
 		elif name == 'genre':
 			if len(self.buffer) != 0:
 				self.release.genres.append(self.buffer)
@@ -180,10 +183,35 @@ class ReleaseHandler(xml.sax.handler.ContentHandler):
 			if len(self.buffer) != 0:
 				self.release.data_quality = self.buffer
 
+		# Company id
+		elif name == 'id' and 'companies' in self.stack:
+			if len(self.buffer) != 0:
+				self.release.companies[-1].id = self.buffer
+
+		# Company name
+		elif name == 'name' and 'companies' in self.stack:
+			if len(self.buffer) != 0:
+				self.release.companies[-1].name = self.buffer
+
+		# Company catno
+		elif name == 'catno' and 'companies' in self.stack:
+			if len(self.buffer) != 0:
+				self.release.companies[-1].catno = self.buffer
+
+		# Company type
+		elif name == 'entity_type' and 'companies' in self.stack:
+			if len(self.buffer) != 0:
+				self.release.companies[-1].type = self.buffer
+
+		# Company type name
+		elif name == 'entity_type_name' and 'companies' in self.stack:
+			if len(self.buffer) != 0:
+				self.release.companies[-1].type_name = self.buffer
+
 		# Track extra artist id
 		elif name == 'id' and 'artist' in self.stack and 'track' in self.stack and 'sub_track' not in self.stack and 'extraartists' in self.stack:
 			if len(self.buffer) != 0:
-		 		teaj = model.Extraartist()
+				teaj = model.Extraartist()
 				teaj.artist_id = self.buffer
 				self.release.tracklist[-1].extraartists.append(teaj)
 
@@ -238,7 +266,6 @@ class ReleaseHandler(xml.sax.handler.ContentHandler):
 			if len(self.buffer) != 0:
 				self.release.tracklist[-1].extraartists[-1].anv = self.buffer
 
-
 		# Release artist anv
 		elif name == 'anv' and 'artist' in self.stack and 'track' not in self.stack and 'extraartists' not in self.stack:
 			if len(self.buffer) != 0:
@@ -285,7 +312,7 @@ class ReleaseHandler(xml.sax.handler.ContentHandler):
 						role = (role[:lIndex].strip(), description)
 					self.release.extraartists[-1].roles.append(role)
 
-		# Track Duration	
+		# Track Duration
 		elif name == 'duration' and 'sub_track' not in self.stack:
 			self.release.tracklist[-1].duration = self.buffer
 
@@ -312,7 +339,7 @@ class ReleaseHandler(xml.sax.handler.ContentHandler):
 				if self.stop_after > 0 and releaseCounter >= self.stop_after:
 					self.endDocument()
 					if self.ignore_missing_tags and len(self.unknown_tags) > 0:
-						print 'Encountered some unknown Release tags: %s' % (self.unknown_tags)
+						print('Encountered some unknown Release tags: %s' % (self.unknown_tags))
 					raise model.ParserStopError(releaseCounter)
 
 		if self.stack[-1] == name:
@@ -320,11 +347,11 @@ class ReleaseHandler(xml.sax.handler.ContentHandler):
 		self.buffer = ''
 
 	def endDocument(self):
-		#print [genre for genre in genres]
-		#print [style for style in styles]
-		#print [format for format in formats]
-		#print [dsc for dsc in descriptions]
-		#print [j for j in joins]
-		#print [(role, roles[role]) for role in roles]
-		#print len(roles)
+		# print([genre for genre in genres])
+		# print([style for style in styles])
+		# print([format for format in formats])
+		# print([dsc for dsc in descriptions])
+		# print([j for j in joins])
+		# print([(role, roles[role]) for role in roles])
+		# print(len(roles))
 		self.exporter.finish()
