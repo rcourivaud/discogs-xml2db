@@ -70,7 +70,34 @@ discogs-xml2db makes use of the following modules
 
 ## How do I use it?
 
-Start by downloading the data dumps (you can use `get_latest_dump.sh` to get the latest dumps).
+Start by downloading [the data dumps](http://data.discogs.com/).  
+You'll want *artists*, *labels*, *masters*, and *releases* `.xml.gz` files.
+
+### Alternative: use `get_latest_dumps.py` and `wget`
+
+You'll need the `requests` library; you can install it using:
+
+    pip install -r requirements/base.txt
+
+Once installed, `get_latest_dumps.py` will produce a list of URLs pointing
+to the latest version of each of the files we import. You can then use `wget`
+to download these files using the list of URLs.
+
+    python get_latest_dumps.py > urls.txt
+    wget --continue --no-clobber --input-file=urls.txt --progress=bar
+
+*Note:* if you run on Windows, you might find that `wget` is aliased
+to `Invoke-WebRequest`. Remove this alias to get to the actual `wget` command:
+
+```powershell
+$ Get-Command wget
+Alias           wget -> Invoke-WebRequest
+$ If (Test-Path Alias:wget) { Remove-Item Alias:wget }
+```
+
+### Importing downloaded files
+
+#### PostgreSQL
 
 Steps to import the data-dumps into PostgreSQL:
 
@@ -87,6 +114,8 @@ Steps to import the data-dumps into PostgreSQL:
    for example takes 15 hours on my linux server with SSD
 8. Run additional Sql fixes (such as removing duplicate rows): `psql -U discogs discogs -f fix_db.sql`
 9. Create Database indexes: `psql -U discogs discogs -f create_indexes.sql`
+
+#### MongoDB
 
 To import data into MongoDB you have two choices: direct import or dumping the records to JSON and then using `mongoimport`.
 The latter is considerably faster, particularly for the initial import.
